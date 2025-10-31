@@ -139,7 +139,7 @@ int last_decoded_samples = 0;                   // 用於統計
 long long last_frame_energy_for_debug = 0;      // 用於調試時打印能量
 
 int volIndex = 5;
-uint volSteps[] = {0x00, 0x1F, 0x2F, 0x3F, 0x4F, 0x5F, 0x6F, 0x7F, 0x8F, 0x9F, 0xAF};
+uint volSteps[] = {0x5F, 0x68, 0x6F, 0x78, 0x7F, 0x88, 0x8F, 0x98, 0x9F, 0xA8, 0xAF};
 
 uint dacVol = volSteps[volIndex];
 bool dacDriection = false;
@@ -270,7 +270,8 @@ int apInitAlertY = 14;
 // 一開始設定啟動
 
 int lightGPIO = AMB_D16;
-int fanGPIO = AMB_D17;
+int fanGPIO = AMB_D20;
+int voiceMute_PIN = AMB_D17;
 
 void setup() {
 
@@ -298,9 +299,11 @@ void setup() {
     pinMode(WIFICLIENT_LED, OUTPUT);
     pinMode(lightGPIO, OUTPUT);
     pinMode(fanGPIO, OUTPUT);
+    pinMode(voiceMute_PIN, OUTPUT);
 
     digitalWrite(lightGPIO, HIGH);
     digitalWrite(fanGPIO, HIGH);
+    digitalWrite(voiceMute_PIN, LOW);
 
     // Print WiFi MAC address:
     printMacAddress();
@@ -384,6 +387,8 @@ void setup() {
         // drawAutoWrappedText(u8g2, 20, 32, 108, "一切就緒！");
         // u8g2.sendBuffer();
         topMenuArea(u8g2, "一切就緒！", 0, 0);
+
+        audio_dac_digital_vol(&audio_dev, dacVol);
 
     }
 
@@ -620,13 +625,21 @@ void loop() {
 
             if(volIndex < 10) {
                 volIndex ++;
+                dacVol = volSteps[volIndex];
             }
+
+            Serial.print("聲音變大, volIndex:");
+            Serial.println(volIndex);
+            Serial.print("聲音變大, dacVol:");
+            Serial.println(dacVol);
+
+
 
             // u8g2.clearBuffer();
             //drawAutoWrappedText(u8g2, 20, 32, 108, "聲音變大...");
             // u8g2.sendBuffer();
             topMenuArea(u8g2, "音量 +", 0, 0);
-            audio_dac_digital_vol(&audio_dev, volSteps[volIndex]);
+            audio_dac_digital_vol(&audio_dev, dacVol);
             delay(500);
 
         }
@@ -643,10 +656,16 @@ void loop() {
             // }
 
             if(volIndex > 0) {
-                volIndex --;
+                volIndex = volIndex - 1;
+                dacVol = volSteps[volIndex];
             }
 
-            audio_dac_digital_vol(&audio_dev, volSteps[volIndex]);
+            Serial.print("聲音變小, volIndex:");
+            Serial.println(volIndex);
+            Serial.print("聲音變小, dacVol:");
+            Serial.println(dacVol);
+
+            audio_dac_digital_vol(&audio_dev, dacVol);
             // u8g2.clearBuffer();
             // drawAutoWrappedText(u8g2, 20, 32, 108, "聲音變小...");
             // u8g2.sendBuffer();
@@ -698,6 +717,6 @@ void loop() {
     // }
 
     
-    delay(10);
+    delay(2);
    
 }
